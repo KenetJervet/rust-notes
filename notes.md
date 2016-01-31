@@ -50,7 +50,7 @@ let x: i32 = 8;
 
 ## 函数
 
-```
+```rust
 fn func(x: i32) -> i32 {
     x + 1
 }
@@ -70,7 +70,7 @@ fn func(x: i32) -> i32 {
 
 ### 提前返回
 
-```
+```rust
 return x;
 ```
 
