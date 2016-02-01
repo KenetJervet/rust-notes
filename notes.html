@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+</head>
+<body>
+<h1 id="java">Java笔记</h1>
+<p>闲话不多说，这里是最精髓的内容，no bullshit.</p>
+<h2>变量绑定</h2>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let x = <span class="dv">5</span>;</code></pre></div>
+<h3>模式</h3>
+<p>在let语句中，左侧并非变量名，而是模式。</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="fu">let</span> (x, y) = (<span class="dv">1</span>, <span class="dv">2</span>);</code></pre></div>
+<h3>类型标记</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let x: i32 = <span class="dv">5</span>;  <span class="co">// 自动类型推断</span></code></pre></div>
+<h3>可变性</h3>
+<p>默认不可变，使用<code>mut</code>则可变。</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let mut x = <span class="dv">5</span>;
+x = <span class="dv">10</span>;</code></pre></div>
+<h3>绑定的初始化</h3>
+<p>绑定在使用之前必须初始化。否则编译失败。</p>
+<h3>作用域和隐藏</h3>
+<p>大括号标记作用域块。函数定义也是一个块。块内绑定可以隐藏块外绑定，如：</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let x: i32 = <span class="dv">8</span>;
+{
+    let x = <span class="dv">12</span>;  <span class="co">// 隐藏外部绑定</span>
+}</code></pre></div>
+<p>隐藏和可变性是完全不同的概念（是否使用let来区分）。</p>
+<h2>函数</h2>
+<pre><code>fn func(x: i32) -&gt; i32 {
+    x + 1
+}</code></pre>
+<ol>
+<li>函数参数<strong><em>必须声明类型</em></strong></li>
+<li>若无返回值，可省略<code>-&gt;</code>及之后的部分</li>
+<li>若有返回值，最后一行为返回值，且<strong><em>不能加分号</em></strong></li>
+</ol>
+<h3>表达式和语句</h3>
+<p>简言之，表达式有值，语句没有值。</p>
+<ol>
+<li>let是语句</li>
+<li>可变绑定赋值是表达式（y = 6），其值为()</li>
+<li>表达式语句：使用<code>;</code>将表达式转换为语句。</li>
+</ol>
+<h3>提前返回</h3>
+<pre><code>return x;</code></pre>
+<p>用在最后被视为傻逼编码风格。</p>
+<h3>发散函数</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">fn <span class="fu">diverge</span>() -&gt; ! {
+    panic!(<span class="st">&quot;This function never returns&quot;</span>);
+}</code></pre></div>
+<p>似乎就是Haskell中的<code>_|_</code></p>
+<p>顺便，使用JAVA_BACKTRACE可以看到调用栈。对直接执行和<code>cargo run</code>都生效。</p>
+<h3>函数指针</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">fn <span class="fu">plus_one</span>(i: i32) -&gt; i32 {
+    i + <span class="dv">1</span>
+}
+
+let f: <span class="fu">fn</span>(i32) -&gt; i32 = plus_one;
+<span class="co">// 或</span>
+let f = plus_one</code></pre></div>
+<p>调用方式还是一样的：</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let six = <span class="fu">f</span>(<span class="dv">5</span>);</code></pre></div>
+<h2>基本类型</h2>
+<h3>布尔</h3>
+<p>类型：<code>bool</code><br />
+表示：<code>true</code>/<code>false</code></p>
+<h3>字符</h3>
+<p>类型：<code>char</code><br />
+表示：<code>'狗'</code><br />
+代表任意Unicode字符</p>
+<h3>数值类型</h3>
+<p>类型：<code>i8</code>、<code>i16</code>、<code>i32</code>、<code>i64</code>、<code>u8</code>、<code>u16</code>、<code>u32</code>、<code>u64</code><br />
+ <code>f32</code>、<code>f64</code>、<code>isize</code>、<code>usize</code></p>
+<p>其中，<code>isize</code>和<code>usize</code>为变长类型（由机器决定），其他的类型不论在何处环境下都是固定长度的。</p>
+<h3>数组</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let x = [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]; <span class="co">// x: [i32; 3]</span>
+let mut m = [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]; <span class="co">// m: mut [m32; 3]</span>
+
+<span class="co">// 初始化的简便方法：</span>
+let x20 = [<span class="dv">0</span>; <span class="dv">20</span>]; <span class="co">// a: [i32; 20]，全部初始化为0</span></code></pre></div>
+<p>取数组长度用<code>len()</code><br />
+访问元素使用下标，语法和其他很多语言相同：</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let a = [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>];
+
+println!(<span class="st">&quot;a has {} elements&quot;</span>, a.<span class="fu">len</span>());
+println!(<span class="st">&quot;the second is {}&quot;</span>, a[<span class="dv">1</span>]);</code></pre></div>
+<h3>切片</h3>
+<p>非拷贝的数据结构部分访问方式。</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let a = [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>];
+let complete = &amp;a[..];  <span class="co">// 所有元素</span>
+let middle = &amp;a[<span class="dv">1</span>..<span class="dv">4</span>];  <span class="co">// 只包含2, 3, 4</span></code></pre></div>
+<h3>字符串</h3>
+<p>类型： <code>str</code></p>
+<p>非固定大小类型。这里不做过多介绍。</p>
+<h3>元组</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let x = (<span class="dv">1</span>, <span class="st">&quot;hello&quot;</span>);
+let x: (i32, &amp;str) = (<span class="dv">1</span>, <span class="st">&quot;hello&quot;</span>);</code></pre></div>
+<p>使用解构<code>let</code>访问元组</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="fu">let</span> (x, y, z) = (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>);</code></pre></div>
+<p>另外：</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">(<span class="dv">0</span>,);  <span class="co">// 单元素元组</span>
+(<span class="dv">0</span>);  <span class="co">// 0</span></code></pre></div>
+<p>除<code>let</code>外，还可使用元组索引：</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">let tuple = (<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>);
+
+let x = tuple<span class="fl">.0</span>;
+let y = tuple<span class="fl">.1</span>;
+let z = tuple<span class="fl">.2</span>;</code></pre></div>
+<h3 id="-1">函数</h3>
+<p>函数类型在讲函数指针时已经有所认识。</p>
+<h2>注释</h2>
+<h3>单行注释</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="co">// 我是单行注释</span></code></pre></div>
+<h3>多行注释</h3>
+<p>文档中并未说明，但根据<a href="https://github.com/java-lang/java/commit/244ea680820c205461ad5af979c0a722372e6dc6">这个提交</a>，应该支持C风格的多行注释。</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="co">/* 我是</span>
+<span class="co">多行注释 */</span></code></pre></div>
+<h3>文档注释</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="co">/// Adds one to the number given.</span>
+<span class="co">///</span>
+<span class="co">/// # Examples</span>
+<span class="co">///</span>
+<span class="co">/// ```</span>
+<span class="co">/// let five = 5;</span>
+<span class="co">///</span>
+<span class="co">/// assert_eq!(6, add_one(5));</span>
+<span class="co">/// # fn add_one(x: i32) -&gt; i32 {</span>
+<span class="co">/// #     x + 1</span>
+<span class="co">/// # }</span>
+<span class="co">/// ```</span>
+fn <span class="fu">add_one</span>(x: i32) -&gt; i32 {
+    x + <span class="dv">1</span>
+}</code></pre></div>
+<h3>用于箱、模块、函数的文档注释</h3>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="co">//! # The Java Standard Library</span>
+<span class="co">//!</span>
+<span class="co">//! The Java Standard Library provides the essential runtime</span>
+<span class="co">//! functionality for building portable Java software.</span></code></pre></div>
+<p>常用于箱根<code>lib.rs</code>或模块根<code>mod.rs</code>中。</p>
+<h3 id="html">生成HTML文档</h3>
+<p>使用<code>javadoc</code>生成，还可以运行代码示例当作测试。</p>
+</body>
+</html>

@@ -560,3 +560,193 @@ let mut x = 5;
 
 println!("{}", x);  // <- try to borrow x here
 ```
+
+### 借用规则解决的问题
+
+#### 无效迭代
+
+```rust
+let mut v = vec![1, 2, 3];  // A: 可变绑定
+
+for i in &v {  // B: 不变引用。回忆一下为什么不能用for i in v，因为移动语义
+    println!("{}", i);
+    v.push(34);  // 报错，可变借用与B处冲突
+}
+```
+
+#### 生命周期结束后的使用
+
+```rust
+let y: &i32;
+{
+    let x = 5;
+    y = &x;
+}
+
+println!("{}", y);  // 报错，被引用的x比y的存活周期短
+```
+
+甚至于，下面的代码也会报错：
+
+```rust
+let y: &i32;
+let x = 5;
+y = &x;
+
+println!("{}", y);
+```
+
+虽然作用域相同，但销毁的顺序与创建的顺序相反。上面的代码中``y``比``x``的生命长显然是不对的。
+
+## 生命期
+
+### 生命期
+
+生命期用来解决释放资源后对资源的使用。
+
+定义函数时可以指定引用参数的生命期。
+
+```rust
+// implicit
+fn foo(x: &i32) {
+}
+
+// explicit
+fn bar<'a>(x: &'a i32) {
+}
+```
+
+``<>``中的是一个泛型参数。生命期是其中一种。当然可以有多个生命期参数：
+
+```rust
+fn bar<'a, 'b>(...)
+```
+
+然后参数类型中显式写明生命期类型：
+
+```rust
+...(x: &'a i32)
+```
+
+如果要加``mut``，则：
+
+```rust
+...(x: &'a mut i32)
+```
+
+### 结构体中的生命期
+
+当结构体中包含引用时，就必须使用显式的生命周期。
+
+```rust
+struct Foo<'a> {
+    x: &'a i32,
+}
+
+fn main() {
+    let y = &5; // this is the same as `let _y = 5; let y = &_y;`
+    let f = Foo { x: y };
+
+    println!("{}", f.x);
+}
+```
+
+保证了对``Foo``的引用不可能比其中``x``引用活得更长。
+
+### impl块中的生命期
+
+```rust
+struct Foo<'a> {
+    x: &'a i32,
+}
+
+impl<'a> Foo<'a> {
+    fn x(&self) -> &'a i32 { self.x }
+}
+
+fn main() {
+    let y = &5; // this is the same as `let _y = 5; let y = &_y;`
+    let f = Foo { x: y };
+
+    println!("x is: {}", f.x());
+}
+```
+
+``impl<'a>``定义了生命期``'a``，而后Foo使用。
+
+### 多个生命期
+
+不消多说，语法和你想的一样。
+
+### 与作用域连起来看
+
+```rust
+struct Foo<'a> {
+    x: &'a i32,
+}
+
+fn main() {
+    let x;                    // -+ x goes into scope
+                              //  |
+    {                         //  |
+        let y = &5;           // ---+ y goes into scope
+        let f = Foo { x: y }; // ---+ f goes into scope
+        x = &f.x;             //  | | error here
+    }                         // ---+ f and y go out of scope
+                              //  |
+    println!("{}", x);        //  |
+}                             // -+ x goes out of scope
+```
+
+问题：为什么struct一定要有生命期标识？
+
+### 'static
+
+``'static``指示在整个程序运行期间存活的变量。
+
+```rust
+let x: &'static str = "Hello, world";
+```
+
+```rust
+static FOO: i32 = 5;
+let x: &'static i32 = &FOO;
+```
+
+### 生命期的省略
+
+输入生命期指的是函数参数的生命期；输出生命期指的是函数返回值中的生命期。
+
+1. 参数中每个省略的生命期都成为一个独立的生命期参数。
+2. 如果只有一个输入生命期，不论是否省略，这个生命期会被指派到返回值中所有省略了的生命期。
+3. 如果有多个输入生命期，而其中一个是``&self``或``&mut self``，则``self``的生命期会被指派到返回值中所有省略了的生命期。
+4. 除上述情况外，省略生命期均报错。
+
+```rust
+fn print(s: &str); // elided
+fn print<'a>(s: &'a str); // expanded
+
+fn debug(lvl: u32, s: &str); // elided
+fn debug<'a>(lvl: u32, s: &'a str); // expanded
+
+// In the preceding example, `lvl` doesn’t need a lifetime because it’s not a
+// reference (`&`). Only things relating to references (such as a `struct`
+// which contains a reference) need lifetimes.
+
+fn substr(s: &str, until: u32) -> &str; // elided
+fn substr<'a>(s: &'a str, until: u32) -> &'a str; // expanded
+
+fn get_str() -> &str; // ILLEGAL, no inputs
+
+fn frob(s: &str, t: &str) -> &str; // ILLEGAL, two inputs
+fn frob<'a, 'b>(s: &'a str, t: &'b str) -> &str; // Expanded: Output lifetime is ambiguous
+
+fn get_mut(&mut self) -> &mut T; // elided
+fn get_mut<'a>(&'a mut self) -> &'a mut T; // expanded
+
+fn args<T:ToCStr>(&mut self, args: &[T]) -> &mut Command; // elided
+fn args<'a, 'b, T:ToCStr>(&'a mut self, args: &'b [T]) -> &'a mut Command; // expanded
+
+fn new(buf: &mut [u8]) -> BufWriter; // elided
+fn new<'a>(buf: &'a mut [u8]) -> BufWriter<'a>; // expanded
+```
