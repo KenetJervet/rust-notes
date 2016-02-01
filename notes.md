@@ -65,7 +65,7 @@ fn func(x: i32) -> i32 {
 简言之，表达式有值，语句没有值。
 
 1. let是语句
-2. 可变绑定赋值是表达式（y = 6），其值为()
+2. 可变绑定赋值是表达式（y = 6），其值为``()``
 3. 表达式语句：使用``;``将表达式转换为语句。
 
 ### 提前返回
@@ -247,3 +247,316 @@ fn add_one(x: i32) -> i32 {
 ### 生成HTML文档
 
 使用``rustdoc``生成，还可以运行代码示例当作测试。
+
+## 条件判断
+
+### if
+
+```rust
+if x == 5 {
+    println!("x is five");
+} else if x == 6 {
+    println!("x is six");
+} else {
+    println!("x is not five nor six");
+}
+```
+
+比较特殊的是，在Rust中，``if``是一个表达式，也就是说，可以这么搞：
+```rust
+let x = 5;
+let y = if x == 5 { 10 } else { 20 }
+```
+当没有``else``子句时，if表达式的值为``()``
+
+## 循环
+
+### loop
+
+表示无限循环。
+
+```rust
+loop {
+    println("Loop forever");
+}
+```
+
+### while
+
+```rust
+let mut done = false;
+while !done {
+    ...
+}
+```
+
+```rust
+while true {
+    ...
+}
+```
+和
+```rust
+loop {
+    ...
+}
+```
+作用相同，显然用后者更好。
+
+### for
+
+Rust中的``for``类似于Python中的``for``，而非C或Java。
+
+```rust
+for x in 0..10 {
+    println!("{}", x);
+}
+```
+
+更抽象的表达为：
+```rust
+for var in expression {
+    code
+}
+```
+其中，``expression``必须可以通过``IntoIterator``转换为迭代器。
+
+Rust中没有C中对应的``for``循环。
+
+### enumerate
+
+Rust中的``enumerate``函数也类似于Python中的内置函数``enumerate``，当需要获取当前迭代次数时使用：
+
+```rust
+for (i, j) in (5..10).enumerate() {
+    println!("x = {} and y = {}", i, j);
+}
+```
+
+可以用在区间或迭代器上。
+
+### break 和 continue
+
+和C一样，用作语句。
+
+```rust
+let mut x = 5;
+
+loop {
+    x += x - 3;
+
+    println!("{}", x);
+
+    if x % 5 == 0 { break; }
+}
+```
+
+```rust
+for x in 0..10 {
+    if x % 2 == 0 { continue; }
+
+    println!("{}", x);
+}
+```
+
+### 循环标签
+
+```rust
+'outer: for x in 0..10 {
+    'inner: for y in 0..10 {
+        if x % 2 == 0 { continue 'outer; } // continues the loop over x
+        if y % 2 == 0 { continue 'inner; } // continues the loop over y
+        println!("x: {}, y: {}", x, y);
+    }
+}
+```
+
+这个实在很好用(｡♥‿♥｡)
+
+
+## 所有权
+
+Rust的特色功能。
+
+之后说的这些功能都是在编译时完成的，没有任何运行时的消耗。
+
+### 所有权
+
+在Rust中，变量绑定使得变量拥有被绑定对象的``所有权``。这意味着，当绑定所在作用域消失后，被绑定的资源将被释放。
+
+```rust
+fn foo() {
+    let v = vec![1, 2, 3];
+}
+```
+
+当v被创建时，创建一个新的``Vec<T>``于堆中。当脱离v所在作用域时，堆中所占用的资源也一并销毁。
+
+### 移动语义
+
+Rust确保任何资源只有一个绑定。
+
+```rust
+let v = vec![1, 2, 3];
+let v2 = v;
+```
+
+之后再执行：
+
+```rust
+println!("v[0] is {}", v[0]);
+```
+
+将会报错：
+
+```
+error: use of moved value: `v`
+println!("v[0] is: {}", v[0]);
+```
+
+### Copy类型
+
+``Copy``是一个特性（trait）。实现了该特性的数据不受上面的讨论的移动约束。当重新绑定时，创建了一个完整的拷贝。
+
+所有的基本类型都实现了``Copy``，比如：
+
+```rust
+fn main() {
+    let a = 5;
+
+    let _y = double(a);
+    println!("{}", a);
+}
+
+fn double(x: i32) -> i32 {
+    x * 2
+}
+```
+可以正常编译。
+
+有一种傻逼的办法，可以还回所有权：
+
+```rust
+let v = vec![1, 2, 3];
+
+fn foo(v: Vec<i32>) -> Vec<i32> {
+    // do stuff with v
+    
+    v
+}
+
+let v = foo(v);
+// ...
+```
+
+很傻逼。
+
+## 引用和借用
+
+### 引用
+
+直接看代码：
+
+```rust
+fn foo(v1: &Vec<i32>, v2: &Vec<i32>) -> i32 {
+    // do stuff with v1 and v2
+
+    // return the answer
+    42
+}
+
+let v1 = vec![1, 2, 3];
+let v2 = vec![1, 2, 3];
+
+let answer = foo(&v1, &v2);
+
+// we can use v1 and v2 here!
+```
+
+我们把``&T``类型称为“引用”。
+
+注意！引用是**不可变**的。
+
+```rust
+fn foo(v: &Vec<i32>) {
+     v.push(5);
+}
+
+let v = vec![];
+
+foo(&v);
+```
+
+报错：
+
+```
+error: cannot borrow immutable borrowed content `*v` as mutable
+v.push(5);
+^
+```
+
+### 可变引用
+
+``&mut T``类型的引用是可变的，如：
+
+```rust
+let mut x = 5;
+{
+    let y = &mut x;
+    *y += 1;
+}
+println!("{}", x);
+```
+
+其中，``x``必须也标记为``mut``。
+``*``用于访问被引用的对象，与C相似。
+
+另外，若把上面的``{}``拿掉，会报错：
+
+```
+error: cannot borrow `x` as immutable because it is also borrowed as mutable
+    println!("{}", x);
+                   ^
+note: previous borrow of `x` occurs here; the mutable borrow prevents
+subsequent moves, borrows, or modification of `x` until the borrow ends
+        let y = &mut x;
+                     ^
+note: previous borrow ends here
+fn main() {
+
+}
+^
+```
+
+请看下面的规则：
+
+### 规则
+
+1. 借用必须维持在与所有者相同或更低（内层）的作用域中。
+2. 借用只能是下面中的一种：
+  * 一个或多个引用（``&T``）
+  * 一个且仅有一个可变引用（``&mut T``）
+  
+比较这两段代码：
+
+```rust
+let mut x = 5;
+
+let y = &mut x;    // -+ &mut borrow of x starts here
+                   //  |
+*y += 1;           //  |
+                   //  |
+println!("{}", x); // -+ - try to borrow x here
+                   // -+ &mut borrow of x ends here
+```
+
+```rust
+let mut x = 5;
+
+{
+    let y = &mut x; // -+ &mut borrow starts here
+    *y += 1;        //  |
+}                   // -+ ... and ends here
+
+println!("{}", x);  // <- try to borrow x here
+```
