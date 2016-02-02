@@ -1125,4 +1125,31 @@ match x {
 
 Haskell即视感愈发明显。。。
 
-<未完>
+要在多重匹配上创建绑定，则必须在每一个匹配上分别创建：
+
+```rust
+let x = 5;
+
+match x {
+    e @ 1 ... 5 | e @ 8 ... 10 => println!("got a range element {}", e),
+    _ => println!("anything"),
+}
+```
+
+是的你没看错，``e@(1 ... 5 | 8 ... 10)``是不行的，嗯就是这么傻逼。。。
+
+### 守卫
+
+```rust
+let x = 4;
+let y = false;
+
+match x {
+    4 | 5 if y => println!("yes"),
+    _ => println!("no"),
+}
+```
+
+好吧这次和Haskell有点不像。
+
+上面的``if``作用于``4 | 5``，而且也不能写作``4 | (5 if y) => ...``。嗯就是这么傻逼。。。
