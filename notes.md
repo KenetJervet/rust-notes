@@ -750,3 +750,379 @@ fn args<'a, 'b, T:ToCStr>(&'a mut self, args: &'b [T]) -> &'a mut Command; // ex
 fn new(buf: &mut [u8]) -> BufWriter; // elided
 fn new<'a>(buf: &'a mut [u8]) -> BufWriter<'a>; // expanded
 ```
+
+## 可变性
+
+可变的变量绑定：
+
+```rust
+let mut x = 5;
+x = 6;
+```
+
+并不改变x所在的值，而改变x所指的位置。
+很像C中的``const *``
+
+可变引用：
+
+```rust
+let mut x = 5;
+let y = &mut x;
+```
+
+很像C中的``* const``
+
+同时使用两种引用：
+
+```rust
+let mut x = 5;
+let mut y = &mut x;
+```
+
+``mut``是模式的一部分：
+
+```rust
+let (mut x, y) = (5, 6);
+
+fn foo(mut x: i32) {
+    ...
+}
+```
+
+### 内部与外部可变性
+
+说一个东西的可变性，一般说的是它是``外部可变性``，比如：
+
+```rust
+use std::sync::Arc
+
+let x = Arc::new(5);
+let y = x.clone();  // 此处更新引用计数
+```
+
+上面对引用计数的更新是在内部进行的。
+
+下面这种情况：
+
+```rust
+use std::cell::RefCell;
+
+let x = RefCell::new(42);
+
+let y = x.borrow_mut();
+```
+
+是内部可变性，调用``borrow_mut``将创建对内部数据的``&mut``引用。
+
+``RefCell``将Rust的借用规则推迟到运行时，当违背借用规则时，将``panic!``掉：
+
+```rust
+use std::cell::RefCell;
+
+let x = RefCell::new(42);
+
+let y = x.borrow_mut();
+let z = x.borrow_mut();
+```
+
+### 域级别的可变性
+
+可变性只适用于绑定（``let mut``）和借用（``&mut``），因此，下面这种不成立：
+
+```rust
+struct Point {
+    x: i32,
+    mut y: i32  // 错误
+}
+```
+
+结构体的可变性取决于对它的绑定：
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let mut a = Point { x: 5, y: 6 };
+
+a.x = 10;
+
+let b = Point { x: 5, y: 6};
+
+b.x = 10; // error: cannot assign to immutable field `b.x`
+```
+
+使用``Cell<T>``来获得域级别的可变性：
+
+```rust
+use std::cell::Cell;
+
+struct Point {
+    x: i32,
+    y: Cell<i32>,
+}
+
+let point = Point { x: 5, y: Cell::new(6) };
+
+point.y.set(7);
+
+println!("y: {:?}", point.y);
+```
+
+## 结构体
+
+```rust
+struct Point {
+    x: i32,
+    y: i32
+}
+
+fn main() {
+    let p = Point { x: 0, y: 0 };
+    println!("The origin is at ({}, {})", origin.x, origin.y);
+}
+```
+
+### 更新
+
+```rust
+struct Point3d {
+    x: i32,
+    y: i32,
+    z: i32
+}
+
+let mut point = Point3d { x: 0, y: 0, z: 0 };
+point = Point3d { y: 1, .. point };
+```
+
+同样适用于非``mut``绑定。（很像Haskell的record的说。。。）
+
+### 元组结构体
+
+一个元组和结构体的混合结构：
+
+```rust
+struct Color(i32, i32, i32)
+```
+说白了，结构体就是Haskell中的记录，而元组结构体就是Haskell中非记录语法的数据。
+
+人家说了，有一种情况下元组结构体会比较有用，就是当只有一个元素的时候（``newtype``模式云云）。。。
+尼玛还能跟Haskell再像一点么！！！！！
+
+### 空结构体
+
+```rust
+struct Electron;
+
+let x = Electron;
+```
+
+尼玛还能跟Haskell再像一点么！！！！！
+
+## 枚举
+
+```rust
+enum Message {
+    Quit,
+    ChangeColor(i32, i32, i32),
+    Move { x: i32, y: i32},
+    Write(String),
+}
+```
+
+尼玛还能跟Haskell的data再像一点么！！！！！
+用的时候倒是有点区别：
+
+```rust
+let x: Message = Message::Move { x: 3, y: 4 };
+```
+
+但是比较傻逼的是，不能使用模式对枚举进行解构：
+
+```rust
+let Message::ChangeColor(r, g, b) = msg;  // 错误
+```
+
+通过实现相等关系，或使用``match``可以解决这一限制。
+
+### 将枚举构造器用作函数
+
+这有什么好说的。。。
+
+## 匹配
+
+使用``match``关键字：
+
+```rust
+let x = 5;
+
+match x {
+    1 => println!("one"),
+    2 => println!("two"),
+    3 => println!("three"),
+    4 => println!("four"),
+    5 => println!("five"),
+    _ => println!("something else"),
+}
+```
+
+与Haskell不同，条件必须是穷尽的，否则会编译失败。
+
+``match``是表达式，似乎显而易见。
+
+### 对枚举进行匹配
+
+```rust
+enum Message {
+    Quit,
+    ChangeColor(i32, i32, i32),
+    Move { x: i32, y: i32 },
+    Write(String),
+}
+
+fn quit() { /* ... */ }
+fn change_color(r: i32, g: i32, b: i32) { /* ... */ }
+fn move_cursor(x: i32, y: i32) { /* ... */ }
+
+fn process_message(msg: Message) {
+    match msg {
+        Message::Quit => quit(),
+        Message::ChangeColor(r, g, b) => change_color(r, g, b),
+        Message::Move { x: x, y: y } => move_cursor(x, y),
+        Message::Write(s) => println!("{}", s),
+    };
+}
+```
+
+## 模式
+
+### 多重模式
+
+```rust
+let x = 1;
+
+match x {
+    1 | 2 => println!("one or two"),
+    3 => println!("three"),
+    _ => println!("anything"),
+}
+```
+
+### 解构
+
+结构体的几种解构方法：
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let origin = Point { x: 0, y: 0 };
+
+match origin {
+    Point { x, y } => println!("({},{})", x, y),
+}
+```
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let origin = Point { x: 0, y: 0 };
+
+match origin {
+    Point { x: x1, y: y1 } => println!("({},{})", x1, y1),
+}
+```
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let origin = Point { x: 0, y: 0 };
+
+match origin {
+    Point { x, .. } => println!("x is {}", x),
+}
+```
+
+### 空白绑定
+
+比如匹配一个``Result<T, E>``：
+
+```rust
+match some_value {
+    Ok(value) => println!("got a value: {}", value),
+    Err(_) => println!("an error occurred"),
+}
+```
+
+使用``..``来忽略多个值，如：
+
+```rust
+enum OptionalTuple {
+    Value(i32, i32, i32),
+    Missing,
+}
+
+let x = OptionalTuple::Value(5, -2, 3);
+
+match x {
+    OptionalTuple::Value(..) => println!("Got a tuple!"),
+    OptionalTuple::Missing => println!("No such luck."),
+}
+```
+
+### 绑定中的引用和可变引用
+
+```rust
+let x = 5;
+
+match x {
+    ref r => println!("Got a reference to {}", r),
+}
+```
+
+```rust
+let mut x = 5;
+
+match x {
+    ref mut mr => println!("Got a mutable reference to {}", mr),
+}
+```
+
+为什么不是``&r``和``&mut r``呢？
+因为作用是不同的，``&r``用来匹配一个引用，而``ref``是用来从数据处获得一个引用。
+
+### 区间
+
+```rust
+let x = 1;
+
+match x {
+    1 ... 5 => println!("one through five"),
+    _ => println!("anything"),
+}
+```
+
+### 创建对模式的绑定
+
+```rust
+let x = 1;
+
+match x {
+    e @ 1 ... 5 => println!("got a range element {}", e),
+    _ => println!("anything"),
+}
+```
+
+Haskell即视感愈发明显。。。
+
+<未完>
