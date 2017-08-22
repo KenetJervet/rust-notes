@@ -12,8 +12,13 @@ fn main() {
         let mut guess = String::new();
         io::stdin().read_line(&mut guess)
             .expect("Failed to read line");
-        let guessed_number: u32 = guess.trim().parse()
-            .expect("Should be a number!");
+        let guessed_number: u32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("You must type a number!");
+                continue
+            }
+        };
         match guessed_number.cmp(&secret_number) {
             Ordering::Equal => {
                 println!("You win!");
