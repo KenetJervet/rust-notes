@@ -1,5 +1,3 @@
-#![allow(unused_variables)]
-
 // Recap: The Rules of References
 // 1. At any time, you can have *either* but not both of:
 //    a. One mutable reference
