@@ -41,7 +41,7 @@ Floating-point types:
 */
 
 fn main() {
-    // ! Note: Type annotation is required because `parse()` is polymorphic.
+    // NOTE: Type annotation is required because `parse()` is polymorphic.
     let guess: u32 = "42".parse().expect("Not a number!");
     println!("You guessed {}", guess+1);
 

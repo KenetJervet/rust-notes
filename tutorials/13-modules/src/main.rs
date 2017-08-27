@@ -6,10 +6,11 @@
  * 3. The above rules apply recursively.
  */
 
-mod defining_modules;
+mod defining_modules;  // declare an external module
 
-use defining_modules::shape;
-use defining_modules::shape::area::CanCalcArea;  // Trait must be in scope to use
+use defining_modules::shape;  // import stuff
+// it's also possible to `use mod1::mod2::*`
+use defining_modules::shape::area::CanCalcArea;  // trait must be in scope to use
 
 fn main() {
     let rect = shape::Rectangle { width: 5.0, height: 6.0 };
